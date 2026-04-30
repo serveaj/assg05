@@ -467,9 +467,9 @@ void jsr(uint16_t i)
  * @param i The instruction.  The bits of the instruction we are
  *   executing.
  */
-void rti(uint16_t i) 
+void rti(uint16_t i)
 {
-  //pop PSR from system stack
+  // pop PSR from system stack
   reg[PSR] = mem_read(reg[R6]);
   pop();
 
@@ -478,9 +478,9 @@ void rti(uint16_t i)
   pop();
 
   // if the restored PSR indicates user mode.
-  if(is_user_mode())
+  if (is_user_mode())
   {
-    //save current system stack pointer to SSP register
+    // save current system stack pointer to SSP register
     reg[SSP] = reg[R6];
 
     // restore user stack pointer to R6 from USP register
@@ -512,34 +512,29 @@ void res(uint16_t i) {}
  *   executing.  The low 7 bits i[7:0] contain the trap service vector
  *   index to be invoked.
  */
-void trap(uint16_t i) 
+void trap(uint16_t i)
 {
-  uint16_t trapvect8 = i & 0xFF; // low 8 bits of instruction is trap vector
+  // save original PSR
+  uint16_t org_psr = reg[PSR];
 
-  // if we are in user mode switch to the system
+  // if currently in user mode switch to supervisor stack and mode
   if (is_user_mode())
   {
-    // save current user stack pointer to USP register
-    reg[USP] = reg[R6];
-
-    // switch to system stack pointer
-    reg[R6] = reg[SSP];
+    reg[USP] = reg[R6]; // save user stack pointer to USP
+    reg[R6] = reg[SSP]; // switch stack pointer to SSP
+    supervisor_mode();  // switch to supervisor mode
   }
 
-  // save the current PC on the system stack
+  // pish PC first
   push(reg[RPC]);
+  push(org_psr);
 
-  // save the current PSR on the system stack
-  push(reg[PSR]);
-
-  // enter supervisor mode
-  supervisor_mode();
-
-  // set PSR for trap handler
-  reg[PSR] = 0x0304;
-
-  // load PC from trap vector
+  // load trap handler
+  uint16_t trapvect8 = TRP(i);
   reg[RPC] = mem_read(trapvect8);
+
+  // restore PSR
+  reg[PSR] = org_psr & 0x0707;
 }
 
 /**
@@ -597,8 +592,8 @@ void init(uint16_t offset)
 
   // set MCR/PSR, e.g. enable the clock, set priority to 0 and
   // start in user mode
-  // enable_clock();
-  // user_mode();
+  enable_clock();
+  user_mode();
 
   // initialize memory mapped status registers
   iomap[KBSR] = 0x0000; // 0 indicates no key is available yet for a program to read
@@ -701,7 +696,7 @@ void start(uint16_t offset)
 
   // perform the fetch-decode-execute cycle while the
   // run clock/latch is enabled
-  while (true) // needs to be modified to use is_running() once implemented
+  while (is_running()) // needs to be modified to use is_running() once implemented
   {
     // fetch the next instruction from memory
     uint16_t i = mem_read(reg[RPC]);
@@ -853,7 +848,6 @@ void set_priority(uint16_t p)
 
   // OR the shifted priority with the PSR
   reg[PSR] |= new_p;
-  
 }
 
 /** @brief push value to current stack
@@ -885,7 +879,6 @@ void pop(void)
 {
   // increment stack pointer in R6 to remove this value from the stack
   reg[R6]++;
-
 }
 
 /** @brief enable clock run bit
