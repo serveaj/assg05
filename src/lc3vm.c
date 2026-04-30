@@ -49,12 +49,20 @@ uint16_t PC_START = 0x3000;
  */
 uint16_t mem_read(uint16_t address)
 {
+  // ACV check
+  if (is_user_mode() && (address < 0x3000 || address >= 0xFE00))
+  {
+    // invoke an access control violation exception
+    except(0x0002);
+    return 0x0000;
+  }
+
   if (address == KBDR_ADDR)
   {
     // clear KBSR bit
     iomap[KBSR] &= 0x7FFF;
   }
-  
+
   return mem[address];
 }
 
@@ -75,6 +83,14 @@ uint16_t mem_read(uint16_t address)
  */
 void mem_write(uint16_t address, uint16_t val)
 {
+  // AVC check
+  if (is_user_mode() && (address < 0x3000 || address >= 0xFE00))
+  {
+    // invoke an access control violation exception
+    except(0x0002);
+    return;
+  }
+
   if (address == DDR_ADDR)
   {
     // clear DSR bit
@@ -481,12 +497,20 @@ void jsr(uint16_t i)
  */
 void rti(uint16_t i)
 {
-  // pop PSR from system stack
-  reg[PSR] = mem_read(reg[R6]);
+  // if RTI is executed in user mode
+  if (is_user_mode())
+  {
+    // invoke a privilege mode exception
+    except(0x0000);
+    return;
+  }
+
+  // pop PSR from system stack using raw memory access
+  reg[PSR] = mem[reg[R6]];
   pop();
 
-  // pop PC from system stack
-  reg[RPC] = mem_read(reg[R6]);
+  // pop PC from system stack using raw memory access
+  reg[RPC] = mem[reg[R6]];
   pop();
 
   // if the restored PSR indicates user mode.
@@ -510,7 +534,11 @@ void rti(uint16_t i)
  *   destination and source register operands, and to extract the
  *   second source register or the immediate value encoded in the
  */
-void res(uint16_t i) {}
+void res(uint16_t i)
+{
+  // opcode exception
+  except(0x0001);
+}
 
 /** @brief trap instruction
  *
@@ -945,3 +973,25 @@ bool is_running(void)
  *   the exception vector number we use to index into the exception service
  *   vector table.
  */
+void except(uint16_t i)
+{
+  // save original PSR
+  uint16_t org_psr = reg[PSR];
+
+  // if currently in user mode switch to supervisor stack and mode
+  if (is_user_mode())
+  {
+    reg[USP] = reg[R6]; // save user stack pointer to USP
+    reg[R6] = reg[SSP]; // switch stack pointer to SSP
+    supervisor_mode();  // switch to supervisor mode
+  }
+
+  // push PC first
+  push(reg[RPC]);
+  push(org_psr);
+
+  // load exception handler from the exception vector table
+  // exception vectors are stored in privileged memory starting at 0x0100
+  uint16_t excvect8 = TRP(i);
+  reg[RPC] = mem_read(0x0100 + excvect8);
+}

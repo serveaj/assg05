@@ -152,7 +152,7 @@ void enable_clock(void); // set MCR run latch bit to 1 to enable clock
 void disable_clock(void); // set MCR run latch bit to 0 to disable clock
 bool is_running(void); // check MCR run latch bit to see if clock is enabled and machine is running
 
-// task 7 exceptions
+void except(uint16_t i); // invoke an exception
 
 #ifdef TEST
 } // end extern C for C++ test runner
