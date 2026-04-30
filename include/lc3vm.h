@@ -148,7 +148,9 @@ void set_priority(uint16_t p); // set priority level to p
 void push(uint16_t val); // push value onto stack of current mode
 void pop(void); // pop value from stack of current mode
 
-// task 3 MCR clock latch manipulation
+void enable_clock(void); // set MCR run latch bit to 1 to enable clock
+void disable_clock(void); // set MCR run latch bit to 0 to disable clock
+bool is_running(void); // check MCR run latch bit to see if clock is enabled and machine is running
 
 // task 7 exceptions
 
