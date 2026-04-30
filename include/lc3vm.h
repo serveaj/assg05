@@ -138,7 +138,10 @@ void ld_img(char* fname);
 // declare your assignment 05 functions here, and put the implementations
 // at the bottom of the lc3vm.c file
 
-// task 1 PSR priority/privilege function declarations here
+bool is_user_mode(void); // test if system is in user mode
+void user_mode(void); // switch the system into usr mode
+void supervisor_mode(void); // switch the system into supervisor mode
+
 
 // task 2 stack manipulation function declarations here
 

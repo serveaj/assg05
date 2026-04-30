@@ -17,7 +17,7 @@ using namespace std;
 #define TEST
 #include "lc3vm.h"
 
-#undef task1_1
+#define task1_1
 #undef task1_2
 #undef task2
 #undef task3
