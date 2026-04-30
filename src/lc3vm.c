@@ -467,7 +467,26 @@ void jsr(uint16_t i)
  * @param i The instruction.  The bits of the instruction we are
  *   executing.
  */
-void rti(uint16_t i) {}
+void rti(uint16_t i) 
+{
+  //pop PSR from system stack
+  reg[PSR] = mem_read(reg[R6]);
+  pop();
+
+  // pop PC from system stack
+  reg[RPC] = mem_read(reg[R6]);
+  pop();
+
+  // if the restored PSR indicates user mode.
+  if(is_user_mode())
+  {
+    //save current system stack pointer to SSP register
+    reg[SSP] = reg[R6];
+
+    // restore user stack pointer to R6 from USP register
+    reg[R6] = reg[USP];
+  }
+}
 
 /** @brief reserved
  *
@@ -493,7 +512,35 @@ void res(uint16_t i) {}
  *   executing.  The low 7 bits i[7:0] contain the trap service vector
  *   index to be invoked.
  */
-void trap(uint16_t i) {}
+void trap(uint16_t i) 
+{
+  uint16_t trapvect8 = i & 0xFF; // low 8 bits of instruction is trap vector
+
+  // if we are in user mode switch to the system
+  if (is_user_mode())
+  {
+    // save current user stack pointer to USP register
+    reg[USP] = reg[R6];
+
+    // switch to system stack pointer
+    reg[R6] = reg[SSP];
+  }
+
+  // save the current PC on the system stack
+  push(reg[RPC]);
+
+  // save the current PSR on the system stack
+  push(reg[PSR]);
+
+  // enter supervisor mode
+  supervisor_mode();
+
+  // set PSR for trap handler
+  reg[PSR] = 0x0304;
+
+  // load PC from trap vector
+  reg[RPC] = mem_read(trapvect8);
+}
 
 /**
  * LC-3 instruction microcode store / lookup table.  Need to define array
