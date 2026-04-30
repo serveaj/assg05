@@ -748,7 +748,7 @@ void start(uint16_t offset)
     op_ex[OPC(i)](i);
 
     // perform I/O and interrupt tasks before next fetch
-    // check_device_status();
+    check_device_status();
   }
 }
 
