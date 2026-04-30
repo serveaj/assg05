@@ -142,8 +142,8 @@ bool is_user_mode(void); // test if system is in user mode
 void user_mode(void); // switch the system into usr mode
 void supervisor_mode(void); // switch the system into supervisor mode
 
-
-// task 2 stack manipulation function declarations here
+uint16_t priority(void); // get current priority level
+void set_priority(uint16_t p); // set priority level to p
 
 // task 3 MCR clock latch manipulation
 

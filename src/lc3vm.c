@@ -746,7 +746,7 @@ void ld_img(char* fname)
 bool is_user_mode(void)
 {
   // make but 15 and test if if is non 0
-  return (reg[PSR] & 0xFFF8) != 0;
+  return (reg[PSR] & 0x8000) != 0;
 }
 
 /** @brief set user mode
@@ -757,7 +757,7 @@ bool is_user_mode(void)
 void user_mode(void)
 {
   // set bit 15 using OR
-  reg[PSR] |= 0xFFF8;
+  reg[PSR] |= 0x8000;
 }
 
 /** @brief set supervisor mode
@@ -768,7 +768,7 @@ void user_mode(void)
 void supervisor_mode(void)
 {
   // clear bit 15 using And
-  reg[PSR] &= ~0xFFF8;
+  reg[PSR] &= ~0x8000;
 }
 
 /** @brief get priority
@@ -780,6 +780,11 @@ void supervisor_mode(void)
  *   significant 3 bits should have any value since only priority levels
  *   0 - 7 are possible
  */
+uint16_t priority(void)
+{
+  // shift bits 8-10 down to 0-2 and mask out all but the least 3 bits
+  return (reg[PSR] >> 8) & 0x7;
+}
 
 /** @brief set priority
  *
@@ -791,6 +796,18 @@ void supervisor_mode(void)
  *   it is undefined what happens if a value not in this range is set for the
  *   priority.
  */
+void set_priority(uint16_t p)
+{
+  // clear bits 8-10 while preserving other bits
+  reg[PSR] &= 0xF8FF; // 1111 1000 1111 1111
+
+  // insert the new priority by shifting it up to bits 8-10 and OR with PSR
+  uint16_t new_p = (p & 0x7) << 8;
+
+  // OR the shifted priority with the PSR
+  reg[PSR] |= new_p;
+  
+}
 
 /** @brief push value to current stack
  *
