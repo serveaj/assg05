@@ -819,6 +819,14 @@ void set_priority(uint16_t p)
  *
  * @param value
  */
+void push(uint16_t value)
+{
+  // decrement stack pointer in R6
+  reg[R6]--;
+
+  // write value to memory at new top of stack address in R6
+  mem_write(reg[R6], value);
+}
 
 /** @brief pop top of current stack
  *
@@ -826,6 +834,12 @@ void set_priority(uint16_t p)
  * that `R6` holds the address of the top of the current stack in use
  * by the running program.
  */
+void pop(void)
+{
+  // increment stack pointer in R6 to remove this value from the stack
+  reg[R6]++;
+
+}
 
 /** @brief enable clock run bit
  *

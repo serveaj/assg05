@@ -145,6 +145,9 @@ void supervisor_mode(void); // switch the system into supervisor mode
 uint16_t priority(void); // get current priority level
 void set_priority(uint16_t p); // set priority level to p
 
+void push(uint16_t val); // push value onto stack of current mode
+void pop(void); // pop value from stack of current mode
+
 // task 3 MCR clock latch manipulation
 
 // task 7 exceptions
